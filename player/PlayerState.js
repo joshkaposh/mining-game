@@ -1,14 +1,24 @@
 import { CORNERS } from "./PlayerCollision.js";
 import { MINE_DIRECTIONS } from "./PlayerDrill.js";
+import { boxCollision } from "../physics.js";
+import { facingDirections } from "./PlayerMovement.js";
 
 export const PLAYER_STATES = {
 	STANDING: 0,
 	MINING: 1,
 	FALLING: 2,
 	FLYING: 3,
+	SHOPPING: 4,
 };
 
-export class State {
+export const playerStates = {
+	IDLE_RIGHT: 0,
+	IDLE_LEFT: 1,
+	MOVING_RIGHT: 2,
+	MOVING_LEFT: 3,
+};
+
+class State {
 	constructor(state) {
 		this.state = state;
 	}
@@ -20,20 +30,107 @@ class Movements extends State {
 		super(state);
 		this.player = player;
 	}
-	move(keys) {
-		if (keys["KeyA"]) this.player.moveLeft();
-		if (keys["KeyS"]) this.player.moveDown();
-		if (keys["KeyD"]) this.player.moveRight();
+	move(keys, shop) {
+		if (keys["KeyA"]) this.player.moveLeft(shop);
+		if (keys["KeyS"]) this.player.moveDown(shop);
+		if (keys["KeyD"]) this.player.moveRight(shop);
 	}
 }
 
-export class StandingState extends Movements {
+class IdleRight extends Movements {
+	constructor(player) {
+		super(player, playerStates.IDLE_RIGHT);
+	}
+
+	enter() {
+		console.log("entering IDLE RIGHT state");
+	}
+
+	handleInput({ keys }) {
+		// if (keys["KeyW"]) this.player.actionState.changeState(PLAYER_STATES.FLYING);
+
+		if (keys["KeyD"]) this.player.actionState.changeState(playerStates.MOVING_RIGHT);
+		if (keys["KeyA"]) this.player.actionState.changeState(playerStates.MOVING_LEFT);
+
+		// if ((keys["Space"] && keys["KeyA"]) || (keys["Space"] && keys["KeyD"]) || (keys["Space"] && keys["KeyS"])) {
+		// 	this.player.actionState.changeState(PLAYER_STATES.MINING);
+		// }
+		// this.move(keys);
+	}
+
+	update(shop) {
+		let new_pos = new Vect2(this.player.pos.x, this.player.pos.y + this.player.gravity.velocity);
+		let c1 = this.player.collision.calculateCorners(new_pos);
+		const bottomCorners = [c1[CORNERS.BOTTOM_LEFT], c1[CORNERS.BOTTOM_RIGHT]];
+
+		// detect if new position collides with shop(update is called after handleInput)
+		if (shop.collideWithPlayer(this.player)) {
+			this.player.actionState.changeState(PLAYER_STATES.SHOPPING);
+		}
+
+		// player isnt grounded, switch to FallingState
+		if (!this.player.collision.collideDown(bottomCorners)) {
+			this.player.actionState.changeState(PLAYER_STATES.FALLING);
+		}
+
+		this.player.gravity.reset();
+	}
+}
+
+class IdleLeft extends Movements {
+	constructor(player) {
+		super(player, playerStates.IDLE_LEFT);
+	}
+
+	enter() {
+		console.log("entering IDLE LEFT state");
+	}
+}
+
+class MovingRight extends Movements {
+	constructor(player) {
+		super(player, playerStates.MOVING_RIGHT);
+	}
+
+	enter() {
+		console.log("entering MOVING RIGHT state");
+	}
+
+	handleInput({ keys }) {
+		// if (keys["KeyW"]) this.player.actionState.changeState(PLAYER_STATES.FLYING);
+
+		if (keys[!"KeyD"]) this.player.actionState.changeState(playerStates.IDLE_RIGHT);
+		if (keys["KeyA"]) this.player.actionState.changeState(playerStates.MOVING_LEFT);
+	}
+}
+
+class MovingLeft extends Movements {
+	constructor(player) {
+		super(player, playerStates.MOVING_LEFT);
+	}
+
+	enter() {
+		console.log("entering MOVING LEFT state");
+	}
+
+	handleInput({ keys }) {
+		// if (keys["KeyW"]) this.player.actionState.changeState(PLAYER_STATES.FLYING);
+
+		if (keys["KeyD"]) this.player.actionState.changeState(playerStates.IDLE_RIGHT);
+		if (keys[!"KeyA"]) this.player.actionState.changeState(playerStates.MOVING_LEFT);
+	}
+}
+
+class StandingState extends Movements {
 	constructor(player) {
 		super(player, PLAYER_STATES.STANDING);
 	}
 
 	enter() {
 		console.log("entering standing state");
+		let frameY = this.player.facingDirection === facingDirections.LEFT ? 0 : 1;
+		this.player.sprite.frameY = frameY;
+		//
 	}
 
 	handleInput({ keys }) {
@@ -45,13 +142,18 @@ export class StandingState extends Movements {
 		this.move(keys);
 	}
 
-	update() {
+	update(shop) {
 		let new_pos = new Vect2(this.player.pos.x, this.player.pos.y + this.player.gravity.velocity);
 		let c1 = this.player.collision.calculateCorners(new_pos);
-		const corners = [c1[CORNERS.BOTTOM_LEFT], c1[CORNERS.BOTTOM_RIGHT]];
+		const bottomCorners = [c1[CORNERS.BOTTOM_LEFT], c1[CORNERS.BOTTOM_RIGHT]];
 
-		if (!this.player.collision.collideDown(corners)) {
-			// player isnt grounded, switch to FallingState
+		// detect if new position collides with shop(update is called after handleInput)
+		if (shop.collideWithPlayer(this.player)) {
+			this.player.actionState.changeState(PLAYER_STATES.SHOPPING);
+		}
+
+		// player isnt grounded, switch to FallingState
+		if (!this.player.collision.collideDown(bottomCorners)) {
 			this.player.actionState.changeState(PLAYER_STATES.FALLING);
 		}
 
@@ -59,7 +161,7 @@ export class StandingState extends Movements {
 	}
 }
 
-export class MiningState extends Movements {
+class MiningState extends Movements {
 	constructor(player) {
 		super(player, PLAYER_STATES.MINING);
 	}
@@ -68,7 +170,7 @@ export class MiningState extends Movements {
 		console.log("entering mining state");
 	}
 
-	handleInput({ keys }) {
+	handleInput({ keys }, shop) {
 		if (!keys["Space"]) this.player.actionState.changeState(PLAYER_STATES.STANDING);
 
 		const drill = this.player.drill;
@@ -99,7 +201,7 @@ export class MiningState extends Movements {
 	// update() {}
 }
 
-export class FallingState extends Movements {
+class FallingState extends Movements {
 	constructor(player) {
 		super(player, PLAYER_STATES.FALLING);
 	}
@@ -136,7 +238,7 @@ export class FallingState extends Movements {
 	}
 }
 
-export class FlyingState extends Movements {
+class FlyingState extends Movements {
 	constructor(player) {
 		super(player, PLAYER_STATES.FLYING);
 	}
@@ -157,25 +259,57 @@ export class FlyingState extends Movements {
 	}
 }
 
+class ShoppingState extends Movements {
+	constructor(player) {
+		super(player, PLAYER_STATES.SHOPPING);
+		this.shopTag = document.getElementById("inventory");
+	}
+
+	enter() {
+		console.log("entering shopping state");
+		this.shopTag.style.display = "block";
+	}
+
+	exit() {
+		console.log("exitting shopping state");
+		this.shopTag.style.display = "none";
+	}
+
+	handleInput({ keys }, shop) {
+		this.move(keys, shop);
+	}
+
+	update(shop) {
+		if (!shop.collideWithPlayer(this.player)) {
+			this.player.actionState.changeState(PLAYER_STATES.STANDING);
+		}
+
+		this.player.gravity.reset();
+	}
+}
+
 export default class PlayerState {
 	constructor(player) {
-		this.states = [
-			new StandingState(player),
-			new MiningState(player),
-			new FallingState(player),
-			new FlyingState(player),
-		];
+		// this.states = [
+		// 	new StandingState(player),
+		// 	new MiningState(player),
+		// 	new FallingState(player),
+		// 	new FlyingState(player),
+		// 	new ShoppingState(player),
+		// ];
+		this.states = [new IdleRight(player), new IdleLeft(player), new MovingRight(player), new MovingLeft(player)];
 		this.currentState = this.states[PLAYER_STATES.STANDING];
 	}
 
 	changeState(newState) {
 		if (!this.states[newState]) return;
+		this.currentState.exit?.call(this.currentState);
 		this.currentState = this.states[newState];
 		this.currentState.enter();
 	}
 
-	update(input) {
-		this.currentState.handleInput(input);
-		this.currentState.update?.call(this.currentState);
+	update(input, shop) {
+		this.currentState.handleInput(input, shop);
+		this.currentState.update?.call(this.currentState, shop);
 	}
 }

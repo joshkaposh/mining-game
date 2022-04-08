@@ -10,15 +10,63 @@
             overflow: hidden;
             margin: 0;
         }
+        .spritesheets {
+            display: none;
+        }
+/* 
+        .spritesheet {
+            display: none;
+        } */
+
+        .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        #canvas {
+            position: absolute;
+            z-index: 5;
+            top: 0;
+            left: 0;
+        }
+
+        #inventory {
+            position: absolute;
+            display: flex;
+            z-index: 10;
+            top: 0;
+            left: 0;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        #inventory #ores {
+            text-align: center;
+        }
+
+        #ores li span {
+            margin-right: 1rem;
+        }
+
     </style>
 </head>
 <body>
-    <canvas id="canvas"></canvas>
 
-    <ul id="ores">
-        <li id="IRON">Iron: <span id="IRON-count"></span></li>
-        <li id="COPPER">Copper: <span id="COPPER-count"></span></li>
-
+    <!-- USE REACT FOR TEMPLATING -->
+    <div class="spritesheets">
+        <img id='ore_spritesheet' class="spritesheet" src="./sprites/ore_spritesheet.png" alt="ore spritesheet">
+        <img id='tile_spritesheet' class="spritesheet" src="./sprites/tile_spritesheet.png" alt="tile spritesheet">
+        <img id="player_spritesheet" class="spritesheet" src="./sprites/player-spritesheet-new.png" alt="player spritesheet" />
+    </div>
+    <div class="container">
+        <canvas id="canvas"></canvas>
+        <div id="inventory">
+            <ul id="ores">
+                <li id="IRON">Iron: <span id="IRON-count"></span><button id="IRON-sell">Sell Iron</button></li>
+                <li id="COPPER">Copper: <span id="COPPER-count"></span><button id="COPPER-sell">Sell Copper</button></li>
+            </ul>
+        </div>
+    </div>
+ 
     </div>
 
     <script src="Time.js"></script>

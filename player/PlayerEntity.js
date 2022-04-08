@@ -1,6 +1,7 @@
 import PlayerCollision from "./PlayerCollision.js";
 import PlayerDrill from "./PlayerDrill.js";
 import PlayerInventory from "./PlayerInventory.js";
+import PlayerSprite from "./PlayerSprite.js";
 
 class Entity {
 	constructor(health, pos, velocity, flySpeed, width, height, worldW, worldH) {
@@ -39,6 +40,8 @@ export default class PlayerEntity extends Entity {
 		this.collision = new PlayerCollision(width, height, tilesize, worldW, worldH, getTile);
 		this.inventory = new PlayerInventory();
 		this.drill = new PlayerDrill(this.inventory, this.collision, 1, Math.floor(width * 0.5));
+		this.sprite = new PlayerSprite(this.width, this.height, tilesize / 2, tilesize / 2, 0, 0);
+
 		// this.inventory.add("BRONZE");
 	}
 }

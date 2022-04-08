@@ -21,12 +21,14 @@ export default class PlayerDrill {
 		let new_integrity = tile.integrity - this.drill_speed;
 
 		if (new_integrity <= 0) {
-			console.log(tile);
+			// console.log(tile);
 			// destroyed tile
 			tile.mined = true;
 			tile.integrity = 0;
 			if (tile.ore) this.inventory.add(tile.ore.type);
-			tile.changeType(TILE_VALUES.AIR);
+
+			tile.changeType(TILE_VALUES.EMPTY);
+			tile.updateSurroundings();
 			return;
 		}
 
@@ -47,7 +49,6 @@ export default class PlayerDrill {
 		// * if there is a tile, and tile isnt walkable && tile hasnt been mined, return true
 		// * else return false
 		let bool, tile;
-		// console.log(pos, dir);
 
 		switch (dir) {
 			case MINE_DIRECTIONS.LEFT:

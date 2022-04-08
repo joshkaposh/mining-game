@@ -26,6 +26,13 @@ export default class Drawer {
 		this.c.closePath();
 	}
 
+	drawCircle(x, y, radius, fillBool) {
+		this.c.beginPath();
+		this.c.arc(x, y, radius, 0, Math.PI * 2, false);
+		fillBool ? this.c.fill() : this.c.stroke();
+		this.c.closePath();
+	}
+
 	drawRect(x, y, width, height, fillBool) {
 		this.c.beginPath();
 		this.c.rect(x, y, width, height);
@@ -39,5 +46,9 @@ export default class Drawer {
 		this.c.lineTo(p2.x, p2.y);
 		this.c.stroke();
 		this.c.closePath();
+	}
+
+	drawImage(img, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight) {
+		this.c.drawImage(img, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
 	}
 }
